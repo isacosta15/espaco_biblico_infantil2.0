@@ -11,6 +11,7 @@ import {
   GetMostAbsentChildrenQueryParams,
 } from "@workspace/api-zod";
 import { authMiddleware } from "../lib/auth";
+import { refreshReportsForChild } from "../lib/daily-report";
 import type { JwtPayload } from "../lib/auth";
 
 const router = Router();
@@ -227,6 +228,7 @@ router.post("/children/:id/restore", authMiddleware, async (req, res): Promise<v
     res.status(404).json({ error: "Cadastro excluído não encontrado ou já restaurado." });
     return;
   }
+  await refreshReportsForChild(child.id);
   res.json(await enrichChild(child, getTodayStr()));
 });
 
@@ -290,6 +292,7 @@ router.delete("/children/:id", authMiddleware, async (req, res): Promise<void> =
     res.status(404).json({ error: "Criança não encontrada" });
     return;
   }
+  await refreshReportsForChild(deleted.id);
   res.sendStatus(204);
 });
 

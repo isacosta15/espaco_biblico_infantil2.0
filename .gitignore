@@ -56,3 +56,6 @@ Thumbs.db
 
 # Arquivo compactado gigante que não deve ir para o Git
 espaco-biblico.zip
+
+# Dados pessoais de crianças (não enviar ao GitHub)
+artifacts/api-server/data/

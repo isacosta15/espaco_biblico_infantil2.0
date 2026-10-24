@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, dailyReportsTable, childrenTable, attendanceTable } from "@workspace/db";
-import { eq, sql, and, count, gte, lte } from "drizzle-orm";
+import { eq, sql, and, count, gte, lte, isNull } from "drizzle-orm";
 import { ListDailyReportsQueryParams, GetDailyReportParams } from "@workspace/api-zod";
 import { authMiddleware } from "../lib/auth";
 
@@ -53,16 +53,16 @@ router.get("/reports/daily/:date", authMiddleware, async (req, res): Promise<voi
 router.get("/dashboard/stats", authMiddleware, async (_req, res): Promise<void> => {
   const todayStr = getTodayStr();
 
-  const [totalRow] = await db.select({ cnt: count() }).from(childrenTable);
-  const [girlsRow] = await db.select({ cnt: count() }).from(childrenTable).where(eq(childrenTable.gender, "F"));
-  const [boysRow] = await db.select({ cnt: count() }).from(childrenTable).where(eq(childrenTable.gender, "M"));
+  const [totalRow] = await db.select({ cnt: count() }).from(childrenTable).where(isNull(childrenTable.deletedAt));
+  const [girlsRow] = await db.select({ cnt: count() }).from(childrenTable).where(and(eq(childrenTable.gender, "F"), isNull(childrenTable.deletedAt)));
+  const [boysRow] = await db.select({ cnt: count() }).from(childrenTable).where(and(eq(childrenTable.gender, "M"), isNull(childrenTable.deletedAt)));
 
   const [todayGirlsRow] = await db.select({ cnt: count() }).from(attendanceTable)
     .innerJoin(childrenTable, eq(attendanceTable.childId, childrenTable.id))
-    .where(and(eq(attendanceTable.attendanceDate, todayStr), eq(childrenTable.gender, "F")));
+    .where(and(eq(attendanceTable.attendanceDate, todayStr), eq(childrenTable.gender, "F"), isNull(childrenTable.deletedAt)));
   const [todayBoysRow] = await db.select({ cnt: count() }).from(attendanceTable)
     .innerJoin(childrenTable, eq(attendanceTable.childId, childrenTable.id))
-    .where(and(eq(attendanceTable.attendanceDate, todayStr), eq(childrenTable.gender, "M")));
+    .where(and(eq(attendanceTable.attendanceDate, todayStr), eq(childrenTable.gender, "M"), isNull(childrenTable.deletedAt)));
 
   const totalChildren = Number(totalRow?.cnt ?? 0);
   const totalGirls = Number(girlsRow?.cnt ?? 0);

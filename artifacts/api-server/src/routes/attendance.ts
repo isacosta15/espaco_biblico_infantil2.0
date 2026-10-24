@@ -3,6 +3,7 @@ import { db, attendanceTable, childrenTable, congregationsTable, dailyReportsTab
 import { eq, and, sql, count, isNull } from "drizzle-orm";
 import { MarkAttendanceBody, ListAttendanceQueryParams } from "@workspace/api-zod";
 import { authMiddleware } from "../lib/auth";
+import { updateDailyReport } from "../lib/daily-report";
 
 const router = Router();
 
@@ -21,29 +22,6 @@ function calcAge(birthDate: string): number {
 
 function toDateString(value: string | Date): string {
   return value instanceof Date ? value.toISOString().split("T")[0] : value;
-}
-
-async function updateDailyReport(date: string): Promise<void> {
-  const girlsCount = await db.select({ cnt: count() }).from(attendanceTable)
-    .innerJoin(childrenTable, eq(attendanceTable.childId, childrenTable.id))
-    .where(and(eq(attendanceTable.attendanceDate, date), eq(childrenTable.gender, "F"), isNull(childrenTable.deletedAt)));
-  const boysCount = await db.select({ cnt: count() }).from(attendanceTable)
-    .innerJoin(childrenTable, eq(attendanceTable.childId, childrenTable.id))
-    .where(and(eq(attendanceTable.attendanceDate, date), eq(childrenTable.gender, "M"), isNull(childrenTable.deletedAt)));
-
-  const totalGirls = Number(girlsCount[0]?.cnt ?? 0);
-  const totalBoys = Number(boysCount[0]?.cnt ?? 0);
-  const totalChildren = totalGirls + totalBoys;
-
-  await db.insert(dailyReportsTable).values({
-    reportDate: date,
-    totalGirls,
-    totalBoys,
-    totalChildren,
-  }).onConflictDoUpdate({
-    target: dailyReportsTable.reportDate,
-    set: { totalGirls, totalBoys, totalChildren },
-  });
 }
 
 router.get("/attendance/dates", authMiddleware, async (_req, res): Promise<void> => {
