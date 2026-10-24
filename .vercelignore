@@ -1,0 +1,12 @@
+attached_assets
+outputs
+.agents
+espaco-biblico.zip
+artifacts/mockup-sandbox
+*.bat
+.replit
+.replitignore
+replit.md
+main.py
+pyproject.toml
+uv.lock
